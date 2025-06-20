@@ -17,15 +17,22 @@ router.post('/', roleMiddleware('admin'), async (req, res) => {
     }
 });
 
-// Get all classes (All authenticated users)
+// Get all classes (All authenticated users) with search/filter
 router.get('/', async (req, res) => {
     try {
-        const classes = await Class.find()
+        const { name, grade, section, academicYear, teacher } = req.query;
+        let query = {};
+        if (name) query.name = { $regex: name, $options: 'i' };
+        if (grade) query.grade = grade;
+        if (section) query.section = section;
+        if (academicYear) query.academicYear = academicYear;
+        if (teacher) query.teacher = teacher;
+        const classes = await Class.find(query)
             .populate('teacher')
             .populate('subjects')
             .populate({
                 path: 'students',
-                select: 'firstName lastName admissionNumber' // Only basic student info
+                select: 'firstName lastName admissionNumber'
             });
         res.json(classes);
     } catch (err) {

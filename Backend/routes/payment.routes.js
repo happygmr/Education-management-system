@@ -36,13 +36,13 @@ router.post('/', roleMiddleware('admin', 'finance'), async (req, res) => {
     }
 });
 
-// Get all payments (filtered by role)
+// Get all payments (filtered by role) with search/filter
 router.get('/', async (req, res) => {
     try {
         let query = {};
         const userRoles = req.user.roles.map(r => r.name);
-
-        // If not admin or finance staff, only show own payments
+        const { student, invoice, status, paymentMethod, dateFrom, dateTo } = req.query;
+        // Role-based filtering
         if (!userRoles.includes('admin') && !userRoles.includes('finance')) {
             if (userRoles.includes('student')) {
                 query.student = req.user.id;
@@ -52,13 +52,21 @@ router.get('/', async (req, res) => {
                 return res.status(403).json({ error: 'Access denied' });
             }
         }
-
+        // Search filters
+        if (student) query.student = student;
+        if (invoice) query.invoice = invoice;
+        if (status) query.status = status;
+        if (paymentMethod) query.paymentMethod = paymentMethod;
+        if (dateFrom || dateTo) {
+            query.createdAt = {};
+            if (dateFrom) query.createdAt.$gte = new Date(dateFrom);
+            if (dateTo) query.createdAt.$lte = new Date(dateTo);
+        }
         const payments = await Payment.find(query)
             .populate('student', 'firstName lastName admissionNumber')
             .populate('invoice', 'invoiceNumber totalAmount dueDate')
             .populate('recordedBy', 'firstName lastName')
             .sort({ createdAt: -1 });
-
         res.json(payments);
     } catch (err) {
         res.status(500).json({ error: err.message });

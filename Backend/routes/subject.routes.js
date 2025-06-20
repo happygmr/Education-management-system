@@ -17,10 +17,15 @@ router.post('/', roleMiddleware('admin'), async (req, res) => {
     }
 });
 
-// Get all subjects (All authenticated users)
+// Get all subjects (All authenticated users) with search/filter
 router.get('/', async (req, res) => {
     try {
-        const subjects = await Subject.find()
+        const { name, code, teacher } = req.query;
+        let query = {};
+        if (name) query.name = { $regex: name, $options: 'i' };
+        if (code) query.code = { $regex: code, $options: 'i' };
+        if (teacher) query.teachers = teacher;
+        const subjects = await Subject.find(query)
             .populate('teachers', 'firstName lastName email')
             .populate('classes', 'name grade section');
         res.json(subjects);

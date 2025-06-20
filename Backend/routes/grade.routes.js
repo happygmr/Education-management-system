@@ -20,34 +20,33 @@ router.post('/', roleMiddleware('admin', 'teacher'), async (req, res) => {
     }
 });
 
-// Get all grades (filtered by role)
+// Get all grades (filtered by role) with search/filter
 router.get('/', async (req, res) => {
     try {
         let query = {};
         const userRoles = req.user.roles.map(r => r.name);
-
-        // If teacher, only show grades for their subjects/classes
+        const { student, subject, class: classId, createdBy } = req.query;
+        // Role-based filtering
         if (userRoles.includes('teacher') && !userRoles.includes('admin')) {
             query.$or = [
                 { createdBy: req.user.id },
                 { 'subject.teacher': req.user.id }
             ];
-        }
-        // If student, only show their grades
-        else if (userRoles.includes('student')) {
+        } else if (userRoles.includes('student')) {
             query.student = req.user.id;
-        }
-        // If guardian, only show their ward's grades
-        else if (userRoles.includes('guardian')) {
+        } else if (userRoles.includes('guardian')) {
             query.student = { $in: req.user.wards };
         }
-
+        // Search filters
+        if (student) query.student = student;
+        if (subject) query.subject = subject;
+        if (classId) query.class = classId;
+        if (createdBy) query.createdBy = createdBy;
         const grades = await Grade.find(query)
             .populate('student', 'firstName lastName admissionNumber')
             .populate('subject', 'name code')
             .populate('class', 'name grade section')
             .populate('createdBy', 'firstName lastName');
-
         res.json(grades);
     } catch (err) {
         res.status(500).json({ error: err.message });

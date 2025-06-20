@@ -17,10 +17,21 @@ router.post('/', roleMiddleware('admin'), async (req, res) => {
     }
 });
 
-// Get all teachers (Admin and Teachers)
+// Get all teachers (Admin and Teachers) with search/filter
 router.get('/', roleMiddleware('admin', 'teacher'), async (req, res) => {
     try {
-        const teachers = await Teacher.find()
+        const { name, employeeId, subject, qualification } = req.query;
+        let query = {};
+        if (name) {
+            query.$or = [
+                { firstName: { $regex: name, $options: 'i' } },
+                { lastName: { $regex: name, $options: 'i' } }
+            ];
+        }
+        if (employeeId) query.employeeId = employeeId;
+        if (subject) query.subjects = subject;
+        if (qualification) query.qualifications = qualification;
+        const teachers = await Teacher.find(query)
             .populate('subjects')
             .populate('classes');
         res.json(teachers);

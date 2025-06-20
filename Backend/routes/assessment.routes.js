@@ -20,35 +20,38 @@ router.post('/', roleMiddleware('admin', 'teacher'), async (req, res) => {
     }
 });
 
-// Get all assessments (filtered by role)
+// Get all assessments (filtered by role) with search/filter
 router.get('/', async (req, res) => {
     try {
         let query = {};
         const userRoles = req.user.roles.map(r => r.name);
-
-        // If teacher, only show their assessments and assessments for their classes
+        const { title, subject, class: classId, dateFrom, dateTo, createdBy } = req.query;
+        // Role-based filtering
         if (userRoles.includes('teacher') && !userRoles.includes('admin')) {
             query.$or = [
                 { createdBy: req.user.id },
                 { 'class.teacher': req.user.id }
             ];
-        }
-        // If student, only show their assessments
-        else if (userRoles.includes('student')) {
+        } else if (userRoles.includes('student')) {
             query['students.student'] = req.user.id;
-        }
-        // If guardian, only show their ward's assessments
-        else if (userRoles.includes('guardian')) {
-            // Assuming guardian model has a wards field with student IDs
+        } else if (userRoles.includes('guardian')) {
             query['students.student'] = { $in: req.user.wards };
         }
-
+        // Search filters
+        if (title) query.title = { $regex: title, $options: 'i' };
+        if (subject) query.subject = subject;
+        if (classId) query.class = classId;
+        if (createdBy) query.createdBy = createdBy;
+        if (dateFrom || dateTo) {
+            query.date = {};
+            if (dateFrom) query.date.$gte = new Date(dateFrom);
+            if (dateTo) query.date.$lte = new Date(dateTo);
+        }
         const assessments = await Assessment.find(query)
             .populate('subject', 'name code')
             .populate('class', 'name grade section')
             .populate('createdBy', 'firstName lastName')
             .populate('students.student', 'firstName lastName admissionNumber');
-
         res.json(assessments);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -193,4 +196,5 @@ router.post('/:id/scores', roleMiddleware('admin', 'teacher'), async (req, res) 
     }
 });
 
+module.exports = router; 
 module.exports = router; 

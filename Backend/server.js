@@ -37,6 +37,7 @@ const assessmentRoutes = require('./routes/assessment.routes');
 const gradeRoutes = require('./routes/grade.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const invoiceRoutes = require('./routes/invoice.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
 
 const app = express();
 
@@ -64,6 +65,15 @@ if (process.env.NODE_ENV !== 'production') {
     logger.add(new winston.transports.Console({
         format: winston.format.simple(),
     }));
+}
+
+// Utility function to format uptime
+function formatuptime(seconds) {
+    const pad = (s) => (s < 10 ? '0' + s : s);
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
 }
 
 // MongoDB connection
@@ -113,6 +123,23 @@ app.use('/api/assessments', assessmentRoutes);
 app.use('/api/grades', gradeRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    const mongoState = mongoose.connection.readyState;
+    const mongoStates = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+    res.json({
+        status: 'ok',
+        uptime: formatuptime(process.uptime()),
+        currentTime: new Date().toISOString(),
+        mongo: {
+            state: mongoStates[mongoState] || 'unknown',
+            host: mongoose.connection.host,
+            name: mongoose.connection.name
+        }
+    });
+});
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
@@ -132,7 +159,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     logger.info(`Server started on port ${PORT}`);

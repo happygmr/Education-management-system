@@ -17,10 +17,26 @@ router.post('/', roleMiddleware('admin'), async (req, res) => {
     }
 });
 
-// Get all students (Admin and Teachers)
+// Get all students (Admin and Teachers) with search/filter
 router.get('/', roleMiddleware('admin', 'teacher'), async (req, res) => {
     try {
-        const students = await Student.find()
+        const { name, admissionNumber, class: classId, gender, dobFrom, dobTo } = req.query;
+        let query = {};
+        if (name) {
+            query.$or = [
+                { firstName: { $regex: name, $options: 'i' } },
+                { lastName: { $regex: name, $options: 'i' } }
+            ];
+        }
+        if (admissionNumber) query.admissionNumber = admissionNumber;
+        if (classId) query.class = classId;
+        if (gender) query.gender = gender;
+        if (dobFrom || dobTo) {
+            query.dateOfBirth = {};
+            if (dobFrom) query.dateOfBirth.$gte = new Date(dobFrom);
+            if (dobTo) query.dateOfBirth.$lte = new Date(dobTo);
+        }
+        const students = await Student.find(query)
             .populate('class')
             .populate('guardians');
         res.json(students);
