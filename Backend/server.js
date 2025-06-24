@@ -38,6 +38,9 @@ const gradeRoutes = require('./routes/grade.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const invoiceRoutes = require('./routes/invoice.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
+const reportCardRoutes = require('./routes/reportCard.routes');
+const attendanceRoutes = require('./routes/attendance.routes');
+const activityLogRoutes = require('./routes/activityLog.routes');
 
 const app = express();
 
@@ -124,6 +127,9 @@ app.use('/api/grades', gradeRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/report-cards', reportCardRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/activity-logs', activityLogRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -159,7 +165,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     logger.info(`Server started on port ${PORT}`);

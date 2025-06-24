@@ -28,6 +28,12 @@ function roleMiddleware(...allowedRoles) {
             return res.status(403).json({ error: 'Access denied' });
         }
         const userRoles = req.user.roles.map(role => role.name);
+
+        // Super admin check
+        if (userRoles.includes('admin')) {
+            return next();
+        }
+
         const hasRole = allowedRoles.some(role => userRoles.includes(role));
         if (!hasRole) {
             return res.status(403).json({ error: 'Insufficient permissions' });

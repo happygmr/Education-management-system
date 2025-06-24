@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Select, Table, Button, InputNumber, message, Space, Card, Typography, Divider, Input, Spin } from 'antd';
+import { Select, Table, Button, InputNumber, message, Space, Typography, Divider, Input, Spin } from 'antd';
 import axios from 'axios';
 import { useAppSelector } from '../store';
 

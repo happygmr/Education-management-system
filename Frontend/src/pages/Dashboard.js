@@ -32,31 +32,31 @@ const Dashboard = () => {
   if (!stats) return null;
 
   return (
-    <div>
+    <div style={{ padding: '24px' }}>
       <Row gutter={[24, 24]}>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card><Statistic title="Students" value={stats.students.total} /></Card>
+          <Card style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', border: '1px solid #f0f0f0' }}><Statistic title="Students" value={stats.students.total} /></Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card><Statistic title="Teachers" value={stats.teachers.total} /></Card>
+          <Card style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', border: '1px solid #f0f0f0' }}><Statistic title="Teachers" value={stats.teachers.total} /></Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card><Statistic title="Classes" value={stats.classes.total} /></Card>
+          <Card style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', border: '1px solid #f0f0f0' }}><Statistic title="Classes" value={stats.classes.total} /></Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card><Statistic title="Subjects" value={stats.subjects.total} /></Card>
+          <Card style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', border: '1px solid #f0f0f0' }}><Statistic title="Subjects" value={stats.subjects.total} /></Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card><Statistic title="Invoices" value={stats.invoices.total} /></Card>
+          <Card style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', border: '1px solid #f0f0f0' }}><Statistic title="Invoices" value={stats.invoices.total} /></Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card><Statistic title="Payments" value={stats.payments.total} /></Card>
+          <Card style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', border: '1px solid #f0f0f0' }}><Statistic title="Payments" value={stats.payments.total} /></Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card><Statistic title="Recent Students (7d)" value={stats.students.recent7days} /></Card>
+          <Card style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', border: '1px solid #f0f0f0' }}><Statistic title="Recent Students (7d)" value={stats.students.recent7days} /></Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card><Statistic title="Recent Payments (7d)" value={stats.payments.recent7days} /></Card>
+          <Card style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', border: '1px solid #f0f0f0' }}><Statistic title="Recent Payments (7d)" value={stats.payments.recent7days} /></Card>
         </Col>
       </Row>
     </div>
