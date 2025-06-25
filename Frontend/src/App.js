@@ -33,6 +33,7 @@ const Fees = () => <div>Fee Creation & Management</div>;
 function PrivateRoute({ children }) {
   const { token } = useAppSelector(state => state.auth);
   const location = useLocation();
+  
   if (!token) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }

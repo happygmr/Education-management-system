@@ -1,19 +1,56 @@
 const express = require('express');
 const router = express.Router();
 const Teacher = require('../teacher.model');
+const User = require('../user.model');
+const Role = require('../role.model');
 const { authMiddleware, roleMiddleware } = require('../middleware/authMiddleware');
+const mongoose = require('mongoose');
 
 // Protect all routes with authentication
 router.use(authMiddleware);
 
-// Create a new teacher (Admin only)
+// Create a new teacher and corresponding user account (Admin only)
 router.post('/', roleMiddleware('admin'), async (req, res) => {
+    const { firstName, lastName, email, password, employeeNumber, hireDate, subjects, classes } = req.body;
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
-        const teacher = new Teacher(req.body);
-        await teacher.save();
-        res.status(201).json(teacher);
+        // Find the 'teacher' role
+        const teacherRole = await Role.findOne({ name: 'teacher' }).session(session);
+        if (!teacherRole) {
+            throw new Error('Teacher role not found');
+        }
+
+        // Create a new user for the teacher
+        const newUser = new User({
+            firstName,
+            lastName,
+            email,
+            password, // In a real app, this should be handled more securely
+            roles: [teacherRole._id],
+        });
+        const savedUser = await newUser.save({ session });
+
+        // Create the new teacher
+        const newTeacher = new Teacher({
+            user: savedUser._id,
+            employeeNumber,
+            hireDate,
+            subjects,
+            classes,
+            // Automatically generate teacherId for now
+            teacherId: `TCH_${Date.now()}` 
+        });
+        await newTeacher.save({ session });
+        
+        await session.commitTransaction();
+        res.status(201).json(newTeacher);
+
     } catch (err) {
+        await session.abortTransaction();
         res.status(400).json({ error: err.message });
+    } finally {
+        session.endSession();
     }
 });
 
@@ -23,15 +60,14 @@ router.get('/', roleMiddleware('admin', 'teacher'), async (req, res) => {
         const { name, employeeId, subject, qualification } = req.query;
         let query = {};
         if (name) {
-            query.$or = [
-                { firstName: { $regex: name, $options: 'i' } },
-                { lastName: { $regex: name, $options: 'i' } }
-            ];
+            // Search in the user's fullName field
+            query['user.fullName'] = { $regex: name, $options: 'i' };
         }
-        if (employeeId) query.employeeId = employeeId;
+        if (employeeId) query.employeeNumber = employeeId;
         if (subject) query.subjects = subject;
         if (qualification) query.qualifications = qualification;
         const teachers = await Teacher.find(query)
+            .populate('user')
             .populate('subjects')
             .populate('classes');
         res.json(teachers);
@@ -44,6 +80,7 @@ router.get('/', roleMiddleware('admin', 'teacher'), async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const teacher = await Teacher.findById(req.params.id)
+            .populate('user')
             .populate('subjects')
             .populate('classes');
         
@@ -54,7 +91,7 @@ router.get('/:id', async (req, res) => {
         // Allow access if user is admin or the teacher themselves
         const userRoles = req.user.roles.map(r => r.name);
         const isAuthorized = userRoles.includes('admin') || 
-                           teacher._id.toString() === req.user.id;
+                           teacher.user && teacher.user._id.toString() === req.user.id;
         
         if (!isAuthorized) {
             return res.status(403).json({ error: 'Access denied' });

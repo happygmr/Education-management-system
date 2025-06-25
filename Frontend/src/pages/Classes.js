@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, Select, message, Popconfirm, Space } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 
 const { Option } = Select;
 
@@ -16,11 +17,14 @@ const Classes = () => {
   const fetchClasses = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/classes', {
+      console.log('Fetching classes from frontend...');
+      const res = await axios.get(`${API_BASE_URL}/api/classes`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
+      console.log('Classes response:', res.data);
       setClasses(res.data);
     } catch (err) {
+      console.error('Error fetching classes from frontend:', err.response?.data);
       message.error('Failed to load classes');
     } finally {
       setLoading(false);
@@ -29,11 +33,13 @@ const Classes = () => {
 
   const fetchTeachers = async () => {
     try {
-      const res = await axios.get('/api/teachers', {
+      const res = await axios.get(`${API_BASE_URL}/api/teachers`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
+      console.log('Fetched teachers:', res.data);
       setTeachers(res.data);
     } catch (err) {
+      console.error('Error fetching teachers:', err);
       // ignore
     }
   };
@@ -56,13 +62,22 @@ const Classes = () => {
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
+      
+      // Generate classId if creating new class
+      if (!editing) {
+        const timestamp = Date.now();
+        values.classId = `CLASS_${timestamp}`;
+      }
+      
+      console.log('Sending class data:', values);
+      
       if (editing) {
-        await axios.put(`/api/classes/${editing._id}`, values, {
+        await axios.put(`${API_BASE_URL}/api/classes/${editing._id}`, values, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         message.success('Class updated');
       } else {
-        await axios.post('/api/classes', values, {
+        await axios.post(`${API_BASE_URL}/api/classes`, values, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         message.success('Class created');
@@ -70,13 +85,14 @@ const Classes = () => {
       setModalOpen(false);
       fetchClasses();
     } catch (err) {
+      console.error('Class creation error:', err.response?.data);
       message.error(err.response?.data?.error || 'Failed to save class');
     }
   };
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`/api/classes/${id}`, {
+      await axios.delete(`${API_BASE_URL}/api/classes/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       message.success('Class deleted');
@@ -91,9 +107,9 @@ const Classes = () => {
     { title: 'Section', dataIndex: 'section', key: 'section' },
     {
       title: 'Class Teacher',
-      dataIndex: ['classTeacher', 'fullName'],
+      dataIndex: ['classTeacher', 'firstName'],
       key: 'classTeacher',
-      render: (_, record) => record.classTeacher?.fullName
+      render: (_, record) => record.classTeacher ? `${record.classTeacher.firstName} ${record.classTeacher.lastName}` : ''
     },
     {
       title: 'Actions',
@@ -134,9 +150,13 @@ const Classes = () => {
           </Form.Item>
           <Form.Item name="classTeacher" label="Class Teacher">
             <Select allowClear showSearch optionFilterProp="children">
-              {teachers.filter(t => t && t.user).map(t => (
-                <Option key={t._id} value={t.user._id}>{t.user.fullName}</Option>
-              ))}
+              {teachers.map(t => {
+                const teacherName = t.user ? `${t.user.firstName} ${t.user.lastName}` : 'Unknown Teacher';
+                const teacherId = t.user ? t.user._id : t._id;
+                return (
+                  <Option key={teacherId} value={teacherId}>{teacherName}</Option>
+                );
+              })}
             </Select>
           </Form.Item>
         </Form>

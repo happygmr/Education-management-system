@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { Modal, Form, Input, Select } from 'antd';
+import { Modal, Form, Input, Select, DatePicker } from 'antd';
+import moment from 'moment';
 
 const { Option } = Select;
 
@@ -10,7 +11,11 @@ const StudentFormModal = ({ open, onOk, onCancel, editing, classes }) => {
     if (!open) {
       form.resetFields();
     } else if (editing) {
-      form.setFieldsValue({ ...editing, class: editing.class?._id });
+      form.setFieldsValue({
+        ...editing,
+        class: editing.class?._id,
+        dateOfBirth: editing.dateOfBirth ? moment(editing.dateOfBirth) : null,
+      });
     } else {
       form.resetFields();
     }
@@ -20,10 +25,17 @@ const StudentFormModal = ({ open, onOk, onCancel, editing, classes }) => {
     form
       .validateFields()
       .then((values) => {
+        console.log('Form validation successful. Values:', values);
         onOk(values);
+        form.resetFields();
       })
       .catch((info) => {
-        console.log('Validate Failed:', info);
+        console.error('Form validation failed:', info);
+        if (info.errorFields) {
+          info.errorFields.forEach(field => {
+            console.error(`Validation error in field '${field.name}':`, field.errors.join(', '));
+          });
+        }
       });
   };
 
@@ -37,13 +49,16 @@ const StudentFormModal = ({ open, onOk, onCancel, editing, classes }) => {
       destroyOnClose
     >
       <Form form={form} layout="vertical">
-        <Form.Item name="firstName" label="First Name" rules={[{ required: true }]}>
+        <Form.Item name="firstName" label="First Name" rules={[{ required: true, message: 'Please enter first name' }]}>
           <Input />
         </Form.Item>
-        <Form.Item name="lastName" label="Last Name" rules={[{ required: true }]}>
+        <Form.Item name="lastName" label="Last Name" rules={[{ required: true, message: 'Please enter last name' }]}>
           <Input />
         </Form.Item>
-        <Form.Item name="admissionNumber" label="Admission Number" rules={[{ required: true }]}>
+        <Form.Item name="dateOfBirth" label="Date of Birth" rules={[{ required: true, message: 'Please enter date of birth' }]}>
+          <DatePicker style={{ width: '100%' }} />
+        </Form.Item>
+        <Form.Item name="admissionNumber" label="Admission Number" rules={[{ required: true, message: 'Please enter admission number' }]}>
           <Input />
         </Form.Item>
         <Form.Item name="gender" label="Gender">
@@ -54,18 +69,12 @@ const StudentFormModal = ({ open, onOk, onCancel, editing, classes }) => {
         </Form.Item>
         <Form.Item name="class" label="Class">
           <Select allowClear showSearch optionFilterProp="children">
-            {classes.map((cls) => (
+            {classes && classes.length > 0 ? classes.map((cls) => (
               <Option key={cls._id} value={cls._id}>
                 {cls.name}
               </Option>
-            ))}
+            )) : <Option disabled>No classes available</Option>}
           </Select>
-        </Form.Item>
-        <Form.Item name="email" label="Email">
-          <Input type="email" />
-        </Form.Item>
-        <Form.Item name="phone" label="Phone">
-          <Input />
         </Form.Item>
       </Form>
     </Modal>

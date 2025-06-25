@@ -11,6 +11,11 @@ const { authMiddleware, roleMiddleware } = require('../middleware/authMiddleware
 // Dashboard stats endpoint (admin/finance only)
 router.get('/stats', authMiddleware, roleMiddleware('admin', 'finance'), async (req, res) => {
     try {
+        // Disable caching for this dynamic endpoint
+        res.set('Cache-Control', 'no-cache, no-store, must-revalidate'); // HTTP 1.1.
+        res.set('Pragma', 'no-cache'); // HTTP 1.0.
+        res.set('Expires', '0'); // Proxies.
+        
         const [
             studentCount,
             teacherCount,

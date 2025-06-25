@@ -3,6 +3,7 @@ import { Table, Button, Input, message, Popconfirm, Space } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import StudentFormModal from '../components/StudentFormModal';
+import API_BASE_URL from '../config';
 
 const Students = () => {
   const [students, setStudents] = useState([]);
@@ -16,7 +17,7 @@ const Students = () => {
   const fetchStudents = async (searchVal = '') => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/students', {
+      const res = await axios.get(`${API_BASE_URL}/api/students`, {
         params: searchVal ? { name: searchVal } : {},
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
@@ -31,7 +32,7 @@ const Students = () => {
   // Fetch classes for dropdown
   const fetchClasses = async () => {
     try {
-      const res = await axios.get('/api/classes', {
+      const res = await axios.get(`${API_BASE_URL}/api/classes`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setClasses(res.data);
@@ -53,13 +54,21 @@ const Students = () => {
   // Handle create/edit submit
   const handleFormSubmit = async (values) => {
     try {
+      // Prepare data for backend, including date formatting
+      const studentData = {
+        ...values,
+        dateOfBirth: values.dateOfBirth.toISOString(), // Format date for backend
+        admission_number: values.admissionNumber, // Correctly map field name
+      };
+      delete studentData.admissionNumber;
+
       if (editing) {
-        await axios.put(`/api/students/${editing._id}`, values, {
+        await axios.put(`${API_BASE_URL}/api/students/${editing._id}`, studentData, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         message.success('Student updated');
       } else {
-        await axios.post('/api/students', values, {
+        await axios.post(`${API_BASE_URL}/api/students`, studentData, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         message.success('Student created');
@@ -68,6 +77,7 @@ const Students = () => {
       setEditing(null);
       fetchStudents(search);
     } catch (err) {
+      console.error('Student form submission error:', err.response?.data || err.message);
       message.error(err.response?.data?.error || 'Failed to save student');
     }
   };
@@ -75,7 +85,7 @@ const Students = () => {
   // Handle delete
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`/api/students/${id}`, {
+      await axios.delete(`${API_BASE_URL}/api/students/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       message.success('Student deleted');

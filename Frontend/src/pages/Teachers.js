@@ -3,6 +3,7 @@ import { Table, Button, Input, message, Popconfirm, Space, Tag } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import TeacherFormModal from '../components/TeacherFormModal';
+import API_BASE_URL from '../config';
 
 const Teachers = () => {
   const [teachers, setTeachers] = useState([]);
@@ -15,7 +16,7 @@ const Teachers = () => {
   const fetchTeachers = async (searchVal = '') => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/teachers', {
+      const res = await axios.get(`${API_BASE_URL}/api/teachers`, {
         params: searchVal ? { name: searchVal } : {},
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
@@ -39,13 +40,19 @@ const Teachers = () => {
   // Handle create/edit submit
   const handleFormSubmit = async (values) => {
     try {
+      const teacherData = {
+        ...values,
+        hireDate: values.hireDate ? values.hireDate.toISOString() : null,
+      };
+
       if (editing) {
-        await axios.put(`/api/teachers/${editing._id}`, values, {
+        // Update logic may need adjustment depending on what fields are editable
+        await axios.put(`${API_BASE_URL}/api/teachers/${editing._id}`, teacherData, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         message.success('Teacher updated');
       } else {
-        await axios.post('/api/teachers', values, {
+        await axios.post(`${API_BASE_URL}/api/teachers`, teacherData, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         message.success('Teacher created');
@@ -54,6 +61,7 @@ const Teachers = () => {
       setEditing(null);
       fetchTeachers(search);
     } catch (err) {
+      console.error('Teacher form submission error:', err.response?.data || err.message);
       message.error(err.response?.data?.error || 'Failed to save teacher');
     }
   };
@@ -61,7 +69,7 @@ const Teachers = () => {
   // Handle delete
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`/api/teachers/${id}`, {
+      await axios.delete(`${API_BASE_URL}/api/teachers/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       message.success('Teacher deleted');

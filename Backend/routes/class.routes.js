@@ -9,10 +9,13 @@ router.use(authMiddleware);
 // Create a new class (Admin only)
 router.post('/', roleMiddleware('admin'), async (req, res) => {
     try {
+        console.log('Creating class with data:', req.body);
         const newClass = new Class(req.body);
-        await newClass.save();
-        res.status(201).json(newClass);
+        const savedClass = await newClass.save();
+        console.log('Class created successfully:', savedClass);
+        res.status(201).json(savedClass);
     } catch (err) {
+        console.error('Error creating class:', err);
         res.status(400).json({ error: err.message });
     }
 });
@@ -20,22 +23,28 @@ router.post('/', roleMiddleware('admin'), async (req, res) => {
 // Get all classes (All authenticated users) with search/filter
 router.get('/', async (req, res) => {
     try {
+        console.log('Fetching classes...');
         const { name, grade, section, academicYear, teacher } = req.query;
         let query = {};
         if (name) query.name = { $regex: name, $options: 'i' };
         if (grade) query.grade = grade;
         if (section) query.section = section;
         if (academicYear) query.academicYear = academicYear;
-        if (teacher) query.teacher = teacher;
+        if (teacher) query.classTeacher = teacher;
+        
+        console.log('Query:', query);
+        
         const classes = await Class.find(query)
-            .populate('teacher')
-            .populate('subjects')
+            .populate('classTeacher')
             .populate({
                 path: 'students',
                 select: 'firstName lastName admissionNumber'
             });
+        console.log('Found classes (with populate):', classes.length);
+        
         res.json(classes);
     } catch (err) {
+        console.error('Error fetching classes:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -44,8 +53,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const classData = await Class.findById(req.params.id)
-            .populate('teacher')
-            .populate('subjects')
+            .populate('classTeacher')
             .populate({
                 path: 'students',
                 select: 'firstName lastName admissionNumber email'
@@ -59,7 +67,7 @@ router.get('/:id', async (req, res) => {
         const userRoles = req.user.roles.map(r => r.name);
         const isAuthorized = userRoles.includes('admin') || 
                            (userRoles.includes('teacher') && 
-                            classData.teacher._id.toString() === req.user.id);
+                            classData.classTeacher && classData.classTeacher._id.toString() === req.user.id);
 
         if (!isAuthorized) {
             // Remove sensitive information for non-authorized users

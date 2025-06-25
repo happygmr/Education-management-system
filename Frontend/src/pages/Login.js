@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store';
 import { loginStart, loginSuccess, loginFailure } from '../store/authSlice';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 
 const { Title } = Typography;
 
@@ -16,7 +17,7 @@ const Login = () => {
   const onFinish = async (values) => {
     dispatch(loginStart());
     try {
-      const res = await axios.post('/api/auth/login', values);
+      const res = await axios.post(`${API_BASE_URL}/api/auth/login`, values);
       dispatch(loginSuccess(res.data));
       navigate('/');
     } catch (err) {

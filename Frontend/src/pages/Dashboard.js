@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Row, Col, Statistic, Spin, Alert } from 'antd';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
@@ -12,7 +13,7 @@ const Dashboard = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get('/api/dashboard/stats', {
+        const res = await axios.get(`${API_BASE_URL}/api/dashboard/stats`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
           }

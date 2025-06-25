@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, message, Popconfirm, Space } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 
 const Subjects = () => {
   const [subjects, setSubjects] = useState([]);
@@ -13,7 +14,7 @@ const Subjects = () => {
   const fetchSubjects = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/subjects', {
+      const res = await axios.get(`${API_BASE_URL}/api/subjects`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setSubjects(res.data);
@@ -42,12 +43,12 @@ const Subjects = () => {
     try {
       const values = await form.validateFields();
       if (editing) {
-        await axios.put(`/api/subjects/${editing._id}`, values, {
+        await axios.put(`${API_BASE_URL}/api/subjects/${editing._id}`, values, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         message.success('Subject updated');
       } else {
-        await axios.post('/api/subjects', values, {
+        await axios.post(`${API_BASE_URL}/api/subjects`, values, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         message.success('Subject created');
@@ -61,7 +62,7 @@ const Subjects = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`/api/subjects/${id}`, {
+      await axios.delete(`${API_BASE_URL}/api/subjects/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       message.success('Subject deleted');

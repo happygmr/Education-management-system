@@ -44,7 +44,12 @@ const activityLogRoutes = require('./routes/activityLog.routes');
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: true, // Allow all origins
+  credentials: true, // Allow credentials
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.static("public"));
 
@@ -53,9 +58,7 @@ const logger = winston.createLogger({
     level: 'info',
     format: winston.format.combine(
         winston.format.timestamp(),
-        winston.format.printf(({ timestamp, level, message }) => {
-            return `[${timestamp}] ${level.toUpperCase()}: ${message}`;
-        })
+        winston.format.json()
     ),
     transports: [
         new winston.transports.File({ filename: 'error.log', level: 'error' }),
@@ -100,15 +103,19 @@ const apiLogger = (req, res, next) => {
     const start = Date.now();
     res.on('finish', () => {
         const duration = Date.now() - start;
-        logger.info({
-            method: req.method,
-            path: req.path,
-            status: res.statusCode,
+        const { method, path, params, query } = req;
+        const { statusCode } = res;
+        const body = req.method !== 'GET' ? req.body : undefined;
+
+        logger.info(JSON.stringify({
+            method,
+            path,
+            status: statusCode,
             duration: `${duration}ms`,
-            params: req.params,
-            query: req.query,
-            body: req.method !== 'GET' ? req.body : undefined
-        });
+            params,
+            query,
+            body
+        }));
     });
     next();
 };
@@ -149,17 +156,22 @@ app.get('/api/health', (req, res) => {
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
-    logger.error({
+    const { method, path, params, query } = req;
+    const statusCode = res.statusCode || 500;
+    const body = req.method !== 'GET' ? req.body : undefined;
+    
+    logger.error(JSON.stringify({
         message: err.message,
-        method: req.method,
-        path: req.path,
-        status: res.statusCode || 500,
-        params: req.params,
-        query: req.query,
-        body: req.method !== 'GET' ? req.body : undefined,
+        method,
+        path,
+        status: statusCode,
+        params,
+        query,
+        body,
         stack: err.stack
-    });
-    res.status(res.statusCode !== 200 ? res.statusCode : 500).json({
+    }));
+
+    res.status(statusCode !== 200 ? statusCode : 500).json({
         error: err.message || 'Internal Server Error'
     });
 });
